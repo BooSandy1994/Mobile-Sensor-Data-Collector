@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "642529287390",
+    "firebase_url": "https://sensor-data-e8e5f.firebaseio.com",
+    "project_id": "sensor-data-e8e5f",
+    "storage_bucket": "sensor-data-e8e5f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642529287390:android:f52f05c2856d6a6c",
+        "android_client_info": {
+          "package_name": "com.example.sensor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "642529287390-urgf67p1gfbq0p6ntk62qcdi05nvnmdm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sensor",
+            "certificate_hash": "6ab58a07e22cb506ceafb8b989e203a585ac9256"
+          }
+        },
+        {
+          "client_id": "642529287390-iuq338ffa13hrgkfn8880ja9n4ks3aqm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBz0dcHSO03-sbGrJZg_k94xzYbwO9UHL4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "642529287390-iuq338ffa13hrgkfn8880ja9n4ks3aqm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
