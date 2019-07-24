@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -32,11 +34,19 @@ public class SignUp extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
 
+        Typeface myTypeface = Typeface.createFromAsset(getAssets(),"fonts/trebuc.ttf");
+
         b1 = (Button)findViewById(R.id.button3);
         mName = (EditText) findViewById(R.id.eName);
         mEmailField = (EditText) findViewById(R.id.fieldEmail);
         mConfirmPass = (EditText) findViewById(R.id.fieldConfirm);
         mNewPass = (EditText) findViewById(R.id.fieldNew);
+
+        mName.setTypeface(myTypeface); mName.setTextColor(Color.BLACK);
+        mEmailField.setTypeface(myTypeface); mEmailField.setTextColor(Color.BLACK);
+        mConfirmPass.setTypeface(myTypeface); mConfirmPass.setTextColor(Color.BLACK);
+        mNewPass.setTypeface(myTypeface); mNewPass.setTextColor(Color.BLACK);
+
 
         mAuth = FirebaseAuth.getInstance();
 

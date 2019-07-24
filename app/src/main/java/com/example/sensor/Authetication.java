@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -15,6 +17,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class Authetication extends AppCompatActivity {
 
@@ -34,9 +37,13 @@ public class Authetication extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
+        Typeface myTypeface = Typeface.createFromAsset(getAssets(),"fonts/trebuc.ttf");
 
         mEmailfield = (EditText) findViewById(R.id.emailField);
         mPasswordfield = (EditText) findViewById(R.id.passwordField);
+
+        mEmailfield.setTypeface(myTypeface); mEmailfield.setTextColor(Color.BLACK);
+        mPasswordfield.setTypeface(myTypeface); mPasswordfield.setTextColor(Color.BLACK);
 
         button = (Button)findViewById(R.id.button);
         button2 = (Button)findViewById(R.id.button2);
@@ -62,7 +69,17 @@ public class Authetication extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         //Checking if the user is already signed in
-        
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        updateUI(currentUser);
+    }
+
+    public void updateUI(FirebaseUser user)  {
+        if(user != null) {
+            openMainactivity();
+        }
+        else{
+            Toast.makeText(Authetication.this,"Please Sign in", Toast.LENGTH_LONG).show();
+        }
     }
 
     public void openMainactivity() {

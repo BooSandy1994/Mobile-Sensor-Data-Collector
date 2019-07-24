@@ -19,26 +19,6 @@ public class myAlarmService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        Intent notificationIntent = new Intent(this,uiService.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,
-                notificationIntent,0);
-
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Sensor Monitor Service")
-                .setContentText("Sensors are being monitored")
-                .setSmallIcon(R.drawable.ic_android)
-                .setContentIntent(pendingIntent)
-                .build();
-        startForeground(1,notification);
-
-    }
-
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
 //        Intent notificationIntent = new Intent(this,uiService.class);
 //        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,
 //                notificationIntent,0);
@@ -51,13 +31,34 @@ public class myAlarmService extends Service {
 //                .build();
 //        startForeground(1,notification);
 
+    }
+
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Intent notificationIntent = new Intent(this,uiService.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,
+                notificationIntent,0);
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Sensor Monitor Service")
+                .setContentText("Sensors are being monitored")
+                .setSmallIcon(R.drawable.ic_android)
+                .setContentIntent(pendingIntent)
+                .build();
+        startForeground(1,notification);
+
         Intent intent1 = new Intent(this,myReceiver.class);
+        intent1.putExtra("Hello",1234);
         PendingIntent pendingIntent1 = (PendingIntent) PendingIntent.getBroadcast(getApplicationContext(),1, intent1,
                                         PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null) {
             alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime()
-                                      + 1000, 150000, pendingIntent1);
+                                      + 1000, 60000, pendingIntent1);
         }
 
         return START_STICKY;

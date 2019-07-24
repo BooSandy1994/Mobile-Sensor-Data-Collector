@@ -1,15 +1,21 @@
 package com.example.sensor;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-
 import static com.example.sensor.MainActivity.upload;
 import static com.example.sensor.foreNotification.CHANNEL_ID;
 
@@ -20,7 +26,6 @@ public class myService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
 
     }
 
@@ -52,11 +57,10 @@ public class myService extends Service {
     private Runnable mToastRunnable = new Runnable() {
         @Override
         public void run() {
-            upload();
-            mHandler.postDelayed(this,300000);
+            mHandler.postDelayed(this,60000);
+            MainActivity.upload(myService.this);
         }
     };
-
 
 
     @Override
@@ -65,4 +69,6 @@ public class myService extends Service {
 
         mHandler.removeCallbacks(mToastRunnable);
     }
+
+
 }
