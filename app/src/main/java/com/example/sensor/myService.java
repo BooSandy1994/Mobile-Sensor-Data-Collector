@@ -58,7 +58,8 @@ public class myService extends Service {
         @Override
         public void run() {
             mHandler.postDelayed(this,60000);
-            MainActivity.upload(myService.this);
+            //MainActivity.upload(myService.this);
+            MainActivity.update();
         }
     };
 

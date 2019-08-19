@@ -14,6 +14,7 @@ public class AppLocationManager implements LocationListener {
     private String latitude;
     private Criteria criteria;
     private String provider;
+    private double lati, longi;
 
     public AppLocationManager(Context context) {
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -27,6 +28,14 @@ public class AppLocationManager implements LocationListener {
 
     private void setMostRecentLocation(Location lastKnownLocation) {
 
+    }
+
+    public double getLatdouble() {
+        return  lati;
+    }
+
+    public double getLongidouble() {
+        return longi;
     }
 
 
@@ -43,6 +52,9 @@ public class AppLocationManager implements LocationListener {
     public void onLocationChanged(Location location) {
         double lat = (double) location.getLatitude();
         double lon = (double) location.getLongitude();
+
+        lati = lat;
+        longi = lon;
 
         latitude = String.valueOf(lat);
         longitude = String.valueOf(lon);

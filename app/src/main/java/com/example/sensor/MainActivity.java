@@ -1,67 +1,53 @@
 package com.example.sensor;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
+import com.opencsv.CSVWriter;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Environment;
-import android.os.Handler;
 import android.provider.Settings.Secure;
-
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
-
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.opencsv.CSVWriter;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Calendar;
-
-import static android.app.PendingIntent.getActivity;
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
-import static android.os.Build.VERSION_CODES.M;
 
 
 public class MainActivity<data> extends AppCompatActivity implements SensorEventListener, ValueEventListener {
 
     private static final String TAG = "MainActivity";
     private SensorManager sensorManager;
-    private Sensor accelerometer, mGyro, mMagno, mLight, mPressure, mTemp, mHumi, mProxi, mGrav, mPedo, mheart;
+    private Sensor accelerometer, mGyro, mMagno, mLight, mPressure, mTemp, mHumi, mProxi, mGrav, mPedo, mheart, mGeo;
+
+    private float[] accelerometerReading = new float[3];
+    private float[] magnetometerReading = new float[3];
+
+    private float[] rotationMatrix = new float[9];
+    private float[] orientationAngles = new float[3];
 
     public static FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     public static DatabaseReference mRootref = firebaseDatabase.getReference();
@@ -85,8 +71,12 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
     public static DatabaseReference mYm;
     public static DatabaseReference mZm;
 
+   // public static DatabaseReference mHVelocity;
     public static DatabaseReference mLongitude;
     public static DatabaseReference mLatitude;
+    public static DatabaseReference mAzimuthref;
+    public static DatabaseReference mPitchref;
+    public static DatabaseReference mRollref;
     public static DatabaseReference mLightref;
     public static DatabaseReference mPressureref;
     public static DatabaseReference mTemperatureref;
@@ -94,20 +84,19 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
     public static DatabaseReference mProximityref;
     public static DatabaseReference mPedometerref;
     public static DatabaseReference mHeartref;
-    public static DatabaseReference mGravref;
+    public static DatabaseReference mxGravref;
+    public static DatabaseReference myGravref;
+    public static DatabaseReference mzGravref;
 
-    private Calendar c;
-    private String sdcard, cdate, fileName, filePath;
-    private File fname;
-    private CSVWriter writer;
-    private Handler fileHandler = new Handler();
 
     public static AppLocationManager appLocationManager;
-    public static String xA, yA, zA, xG, yG, zG, xM, yM, zM, sLight, sPressure, sPedo, sHumi, sTemp, sHeart, sGrav, sProxi;
-    public static String[] data = null;
     public String aId;
 
-    public static TextView xVal, yVal, zVal, xGVal, yGVal, zGVal, xMVal, yMVal, zMVal, light, pressure, temp, humi, proxi, grav, pedo, heart;
+    public static String xVal, yVal, zVal, xGVal, yGVal, zGVal, xMVal, yMVal, zMVal, light, pressure, temp, humi, proxi, xGrav,
+            yGrav, zGrav, heart, azimuthGeo, pitchGeo, rollGeo;
+    public static TextView  pedo;
+    private Display mdisplay;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,32 +105,14 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
 
         mAuth = FirebaseAuth.getInstance();
 
+
+
+
         aId = Secure.getString(getContentResolver(), Secure.ANDROID_ID);
         mUser = mRootref.child(aId);
-
         appLocationManager = new AppLocationManager(MainActivity.this);
 
-        xVal = (TextView) findViewById(R.id.xVal);
-        yVal = (TextView) findViewById(R.id.yVal);
-        zVal = (TextView) findViewById(R.id.zVal);
-
-        xGVal = (TextView) findViewById(R.id.xGVal);
-        yGVal = (TextView) findViewById(R.id.yGVal);
-        zGVal = (TextView) findViewById(R.id.zGVal);
-
-        xMVal = (TextView) findViewById(R.id.xMVal);
-        yMVal = (TextView) findViewById(R.id.yMVal);
-        zMVal = (TextView) findViewById(R.id.zMVal);
-
-        light = (TextView) findViewById(R.id.light);
-        pressure = (TextView) findViewById(R.id.pressure);
-        humi = (TextView) findViewById(R.id.humi);
-        temp = (TextView) findViewById(R.id.temp);
-        proxi = (TextView) findViewById(R.id.proxi);
-        grav = (TextView) findViewById(R.id.grav);
-        pedo = (TextView) findViewById(R.id.pedo);
-        heart = (TextView) findViewById(R.id.heart);
-
+        pedo = findViewById(R.id.pedo);
         Typeface myTypeface = Typeface.createFromAsset(getAssets(), "fonts/trebuc.ttf");
         pedo.setTypeface(myTypeface);
         pedo.setTextColor(Color.BLACK);
@@ -150,14 +121,42 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
         Log.d(TAG, "onCreate: Initializing Sensor Services");
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mdisplay = wm.getDefaultDisplay();
+
+
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        mGeo = sensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+        if(mGeo != null) {
+            sensorManager.registerListener(MainActivity.this, mGeo, SensorManager.SENSOR_DELAY_NORMAL);
+            Log.d(TAG, "onCreate: Geomagnetic sensor active");
+        }else {
+            azimuthGeo = "NA";
+            pitchGeo = "NA";
+            rollGeo = "NA";
+        }
+
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         if (accelerometer != null) {
             sensorManager.registerListener(MainActivity.this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            Log.d(TAG, "onCreate: Registered acclerometer listener");
+            Log.d(TAG, "onCreate: Registered accelerometer listener");
         } else {
-            xVal.setText("123abcd");
-            yVal.setText("123abcd");
-            zVal.setText("123abcd");
+            xVal = "NA";
+            yVal = "NA";
+            zVal = "NA";
         }
 
         mGyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -165,9 +164,9 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mGyro, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Gyro listener");
         } else {
-            xGVal.setText("123abcd");
-            yGVal.setText("123abcd");
-            zGVal.setText("123abcd");
+            xGVal = "NA";
+            yGVal = "NA";
+            zGVal = "NA";
         }
 
         mMagno = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -175,9 +174,9 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mMagno, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Magno listener");
         } else {
-            xMVal.setText("123abcd");
-            yMVal.setText("123abcd");
-            zMVal.setText("123abcd");
+            xMVal = "NA";
+            yMVal = "NA";
+            zMVal = "NA";
         }
 
         mLight = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -185,7 +184,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mLight, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Light listener");
         } else {
-            light.setText("123abcd");
+            light = "NA";
         }
 
         mPressure = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
@@ -193,7 +192,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mPressure, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Pressure listener");
         } else {
-            pressure.setText("123abcd");
+            pressure = "NA";
         }
 
         mTemp = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
@@ -201,7 +200,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mTemp, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Temperature listener");
         } else {
-            temp.setText("123abcd");
+            temp = "NA";
         }
 
         mHumi = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
@@ -209,7 +208,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mHumi, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Humidity listener");
         } else {
-            humi.setText("123abcd");
+            humi = "NA";
         }
 
         mProxi = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
@@ -217,7 +216,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mProxi, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Proximity listener");
         } else {
-            humi.setText("123abcd");
+            proxi = "NA";
         }
 
         mGrav = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
@@ -225,7 +224,9 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mGrav, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Proximity listener");
         } else {
-            grav.setText("123abcd");
+            xGrav = "NA";
+            yGrav = "NA";
+            zGrav = "NA";
         }
 
         mPedo = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
@@ -233,7 +234,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mPedo, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Pedometer listener");
         } else {
-            pedo.setText("123abcd");
+            pedo.setText("NA");
         }
 
         mheart = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
@@ -241,19 +242,78 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
             sensorManager.registerListener(MainActivity.this, mheart, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d(TAG, "onCreate: Registered Device temperature listener");
         } else {
-            heart.setText("123abcd");
+            heart = "NA";
         }
 
 
     }
 
-    @SuppressLint("HardwareIds")
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    public static void update(){
+
+        String longitude, latitude;
+
+
+        longitude = appLocationManager.getLongitude();
+        latitude = appLocationManager.getLatitude();
+
+
+        String thisDate;
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-YYYY", Locale.getDefault());
+        thisDate = df.format(new Date());
+
+        String thisTime;
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        thisTime = sdf.format(new Date());
+
+        String basedir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+        String fileName = "Analysis-"+thisDate+".csv";
+        String filePath = basedir + File.separator + fileName;
+        File f = new File(filePath);
+        CSVWriter writer = null;
+
+        //file writing begins
+        if(f.exists() && !f.isDirectory()){
+            try{
+                FileWriter mWriter = new FileWriter(filePath, true);
+                writer = new CSVWriter(mWriter);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }else{
+            try {
+                writer = new CSVWriter(new FileWriter(filePath));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+        List<?> l = new ArrayList<>();
+
+
+        //float[] f1 = new float[] {};
+
+        String[] data = {thisTime,longitude,latitude,xVal,yVal,zVal,xGVal,yGVal,
+                            zGVal,xMVal,yMVal,zMVal,azimuthGeo,pitchGeo,rollGeo,
+                            light,pressure,temp,humi,pedo.getText().toString(),proxi,xGrav,yGrav,zGrav,heart};
+
+        writer.writeNext(data);
+        try{
+            writer.close();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
     public static void upload(Context context) {
 
         String thisTime, thisDate;
 
-        String longitude,latitude;
-
+        String longitude, latitude, sPedo;
 
 
         longitude = appLocationManager.getLongitude();
@@ -287,6 +347,10 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
         mYm = mTime.child("yMVal");
         mZm = mTime.child("zMVal");
 
+       // mHVelocity = mTime.child("Haversine Velocity");
+        mAzimuthref = mTime.child("Device Direction");
+        mPitchref = mTime.child("Top - Bottom tilt");
+        mRollref = mTime.child("Left - Right tilt");
         mLightref = mTime.child("Light");
         mPressureref = mTime.child("Pressure");
         mTemperatureref = mTime.child("Temperature");
@@ -294,31 +358,38 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
         mProximityref = mTime.child("Proximity");
         mPedometerref = mTime.child("Pedometer");
         mHeartref = mTime.child("Heart");
-        mGravref = mTime.child("Gravity");
+        mxGravref = mTime.child("xGrav");
+        myGravref = mTime.child("yGrav");
+        mzGravref = mTime.child("zGrav");
+
 
         mLongitude.setValue(longitude);
         mLatitude.setValue(latitude);
+       // mHVelocity.setValue(velocityHaversine);
 
-        xA = xVal.getText().toString() ; mXa.setValue(xA);
-        yA = yVal.getText().toString(); mYa.setValue(yA);
-        zA = zVal.getText().toString(); mZa.setValue(zA);
-
-        xG = xGVal.getText().toString(); mXg.setValue(xG);
-        yG = yGVal.getText().toString(); mYg.setValue(yG);
-        zG = zGVal.getText().toString(); mZg.setValue(zG);
-
-        xM = xMVal.getText().toString(); mXm.setValue(xM);
-        yM = yMVal.getText().toString(); mYm.setValue(yM);
-        zM = zMVal.getText().toString(); mZm.setValue(zM);
-
-        sLight = light.getText().toString(); mLightref.setValue(sLight);
-        sPressure = pressure.getText().toString(); mPressureref.setValue(sPressure);
-        sTemp = temp.getText().toString(); mTemperatureref.setValue(sTemp);
-        sHumi = humi.getText().toString(); mHumidityref.setValue(sHumi);
-        sPedo = pedo.getText().toString(); mPedometerref.setValue(sPedo);
-        sProxi = proxi.getText().toString(); mProximityref.setValue(sProxi);
-        sGrav = grav.getText().toString(); mGravref.setValue(sGrav);
-        sHeart = heart.getText().toString(); mHeartref.setValue(sHeart);
+        mXa.setValue(xVal);
+        mYa.setValue(yVal);
+        mZa.setValue(zVal);
+        mXg.setValue(xGVal);
+        mYg.setValue(yGVal);
+        mZg.setValue(zGVal);
+        mXm.setValue(xMVal);
+        mYm.setValue(yMVal);
+        mZm.setValue(zMVal);
+        mAzimuthref.setValue(azimuthGeo);
+        mPitchref.setValue(pitchGeo);
+        mRollref.setValue(rollGeo);
+        mLightref.setValue(light);
+        mPressureref.setValue(pressure);
+        mTemperatureref.setValue(temp);
+        mHumidityref.setValue(humi);
+        sPedo = pedo.getText().toString();
+        mPedometerref.setValue(sPedo);
+        mProximityref.setValue(proxi);
+        mxGravref.setValue(xGrav);
+        myGravref.setValue(yGrav);
+        mzGravref.setValue(zGrav);
+        mHeartref.setValue(heart);
     }
 
     public void goNext(View view) {
@@ -327,8 +398,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
         startActivity(intent);
     }
 
-
-    public void signOutUser(View view){
+    public void signOutUser(View view) {
 
         FirebaseAuth.getInstance().signOut();
 
@@ -337,52 +407,90 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
 
     }
 
-    public void resetPedo(View view){
-       pedo.setText("0");
+    public void resetPedo(View view) {
+        pedo.setText("0");
     }
 
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+
         Sensor s = event.sensor;
         try {
-            if(s.getType() == Sensor.TYPE_ACCELEROMETER) {
-
-
+            if (s.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
                 Log.d(TAG, "onSensorChanged: X: " + event.values[0] + "Y: " + event.values[1] + "Z: " + event.values[2]);
 
-                xVal.setText(""+event.values[0]);
-                yVal.setText("" + event.values[1]);
-                zVal.setText("" + event.values[2]);
+                xVal = "" + event.values[0];
+                yVal = "" + event.values[1];
+                zVal = "" + event.values[2];
 
-            }else if(s.getType() == Sensor.TYPE_GYROSCOPE) {
-                xGVal.setText("" + event.values[0]);
-                yGVal.setText("" + event.values[1]);
-                zGVal.setText("" + event.values[2]);
-            }else if(s.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                xMVal.setText("" + event.values[0]);
-                yMVal.setText("" + event.values[1]);
-                zMVal.setText("" + event.values[2]);
-            }else if(s.getType() == Sensor.TYPE_LIGHT) {
-                light.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_PRESSURE) {
-                pressure.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-                temp.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
-                humi.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_PROXIMITY) {
-                proxi.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_GRAVITY) {
-                grav.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_STEP_COUNTER) {
+                System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.length );
+
+
+            } else if (s.getType() == Sensor.TYPE_GYROSCOPE) {
+                xGVal= "" + event.values[0];
+                yGVal= "" + event.values[1];
+                zGVal= "" + event.values[2];
+            } else if (s.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                xMVal= "" + event.values[0];
+                yMVal= "" + event.values[1];
+                zMVal= "" + event.values[2];
+
+                System.arraycopy(event.values, 0, magnetometerReading, 0 , magnetometerReading.length);
+
+            } else if (s.getType() == Sensor.TYPE_LIGHT) {
+                light= "" + event.values[0];
+            } else if (s.getType() == Sensor.TYPE_PRESSURE) {
+                pressure= "" + event.values[0];
+            } else if (s.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+                temp= "" + event.values[0];
+            } else if (s.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
+                humi= "" + event.values[0];
+            } else if (s.getType() == Sensor.TYPE_PROXIMITY) {
+                proxi= "" + event.values[0];
+            } else if (s.getType() == Sensor.TYPE_GRAVITY) {
+                xGrav= "" + event.values[0];
+                yGrav= "" + event.values[1];
+                zGrav= "" + event.values[2];
+            } else if (s.getType() == Sensor.TYPE_STEP_COUNTER) {
                 pedo.setText("" + event.values[0]);
-            }else if(s.getType() == Sensor.TYPE_HEART_RATE) {
-                heart.setText("" + event.values[0]);
+            } else if (s.getType() == Sensor.TYPE_HEART_RATE) {
+                heart= "" + event.values[0];
             }
         } catch (Exception e) {
         }
 
+
+        boolean rotationOk;
+        rotationOk = SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
+
+        float[] rotationMatrixAdjusted = new float[9];
+
+        switch (mdisplay.getRotation()) {
+            case Surface.ROTATION_0 :
+                rotationMatrixAdjusted = rotationMatrix.clone();
+                break;
+
+            case Surface.ROTATION_90:
+                SensorManager.remapCoordinateSystem(rotationMatrix,SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, rotationMatrixAdjusted);
+                break;
+
+            case Surface.ROTATION_180:
+                SensorManager.remapCoordinateSystem(rotationMatrix,SensorManager.AXIS_MINUS_X,SensorManager.AXIS_MINUS_Y, rotationMatrixAdjusted);
+                break;
+
+            case Surface.ROTATION_270:
+                SensorManager.remapCoordinateSystem(rotationMatrix,SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X,rotationMatrixAdjusted);
+                break;
+        }
+
+
+        if(rotationOk)
+            SensorManager.getOrientation(rotationMatrixAdjusted,orientationAngles);
+
+        azimuthGeo = "" + orientationAngles[0];
+        pitchGeo   = "" + orientationAngles[1];
+        rollGeo    = "" + orientationAngles[2];
 
     }
 
@@ -390,7 +498,6 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
-
 
     @Override
     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -402,11 +509,7 @@ public class MainActivity<data> extends AppCompatActivity implements SensorEvent
 
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
 
-    }
 
 
 
