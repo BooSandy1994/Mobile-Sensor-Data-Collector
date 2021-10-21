@@ -1,2 +1,2 @@
 # Sensor
-Implementation of the Android Sensors project to analyze the sensor data of smartphones. Collection of mobile sensor data to analyse human actions. The main sensors of gyroscope, accelerometer, gravity sensor etc. are recorded. 
+This android application was built to monitor mobile sensors and upload the same in user databases in Firebase. Background services, power optmization, GPS satellite trackiong has also been implementation in addition to other conventional sensors.
